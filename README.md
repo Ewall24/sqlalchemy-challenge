@@ -7,52 +7,138 @@ To do so, complete the following steps:
 
    Use the provided files (climate_starter.ipynb and hawaii.sqlite) to complete your climate analysis and data exploration.
 
-    Use the SQLAlchemy create_engine() function to connect to your SQLite database.
+   Use the SQLAlchemy create_engine() function to connect to your SQLite database.
+       engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 
-    Use the SQLAlchemy automap_base() function to reflect your tables into classes, and then save references to the classes named station and measurement.
+   Use the SQLAlchemy automap_base() function to reflect your tables into classes, and 
+       # View all of the classes that automap found
+        Base.classes.keys()
+   
+   then save references to the classes named station and measurement.
+       # reflect an existing database into a new model
+Base = automap_base()
+Base.prepare(autoload_with=engine)
 
-    Link Python to the database by creating a SQLAlchemy session. 
+   # reflect the tables
+measurement= Base.classes.measurement 
+station  = Base.classes.station 
+  
+  Link Python to the database by creating a SQLAlchemy session. 
+   # Create our session (link) from Python to the DB
+session = Session(engine)  
   
 
- Remember to close your session at the end of your notebook.
+               Remember to close your session at the end of your notebook.
 
 Perform a precipitation analysis and then a station analysis by completing the steps in the following two subsections.
 
 #Precipitation Analysis
 
   Find the most recent date in the dataset.
+  # Find the most recent date in the data set.
+recent_date =session.query(func.max(measurement.date)).scalar() 
+recent_date
+ 
   Using that date, get the previous 12 months of precipitation data by querying the previous 12 months of data.
-  
+  # Calculate the date one year from the last date in data set.
+year_one = dt.date(2017,8,23) - dt.timedelta(days=365) 
+year_one 
+
+
 
 Select only the "date" and "prcp" values.
 
+# Perform a query to retrieve the data and precipitation scores
+perception_data = session.query(measurement.date,measurement.prcp).filter(measurement.date >=year_one).all()
+perception_data
+# Save the query results as a Pandas DataFrame. Explicitly set the column names
+df=pd.DataFrame(perception_data,columns=['date','perception']) 
+df
+
 Load the query results into a Pandas DataFrame. Explicitly set the column names.
+# Use Pandas Plotting with Matplotlib to plot the data
+df.plot(xlabel='Date',ylabel='Inches',rot=90)
 
 Sort the DataFrame values by "date".
+# Sort the dataframe by date
+df.set_index('date',inplace=True) 
+df=df.sort_values(by='date') 
 
 Plot the results by using the DataFrame plot method, as the following image shows: 
 <img width="468" alt="precipitation" src="https://github.com/user-attachments/assets/45ab1cff-be24-402c-a243-87a0572ca3ba">
 
 
 Use Pandas to print the summary statistics for the precipitation data. 
+# Use Pandas Plotting with Matplotlib to plot the data
+df.plot(xlabel='Date',ylabel='Inches',rot=90) 
+<Axes: xlabel='Date', ylabel='Inches'>
 
 #Station Analysis 
 
 
 Design a query to calculate the total number of stations in the dataset.
+# Design a query to calculate the total number of stations in the dataset
+total_stations=session.query(func.count(station.station.distinct())).scalar() 
+total_stations  
+
+total stations in the dataset are 9.
+
 
 Design a query to find the most-active stations (that is, the stations that have the most rows). To do so, complete the following steps:
 
     List the stations and observation counts in descending order.
-
+total_stations=session.query(measurement.station,func.count(measurement.station))\
+    .group_by(measurement.station).order_by(func.count(measurement.station).desc()).all() 
+total_stations 
 
     Answer the following question: which station id has the greatest number of observations?
+Station ID USC00519281 has the highest number of observations at 2772.
 
 Design a query that calculates the lowest, highest, and average temperatures that filters on the most-active station id found in the previous query.
+   # Using the most active station id from the previous query, calculate the lowest, highest, and average temperature.
+lowest_temp= session.query(func.min(measurement.tobs)).filter(measurement.station == 'USC00519281').scalar()
+highest_temp= session.query(func.max(measurement.tobs)).filter(measurement.station == 'USC00519281').scalar()
+average_temp= session.query(func.avg(measurement.tobs)).filter(measurement.station == 'USC00519281').scalar()
+print(lowest_temp,highest_temp,average_temp)
 
-Design a query to get the previous 12 months of temperature observation (TOBS) data. To do so, complete the following steps:
+54.0 85.0 71.66378066378067 
+
+lowest_temp = 54.0
+highest_temp =85.0
+average_temp =71.66378066378067
+
+Design a query to get the previous 12 months of temperature observation (TOBS) data. 
+To do so, complete the following steps:
 
     Filter by the station that has the greatest number of observations.
+    
+    # Using the most active station id
+    most_active_station_id = 'USC00519281' 
+# Query the last 12 months of temperature observation data for this station and plot the results as a histogram
+
+
+# Query the last 12 months of temperature observation data for the most active station
+temperature_data = session.query(measurement.tobs).filter(
+    measurement.station == most_active_station_id,
+    measurement.date >= year_one
+).all()
+
+# Convert query results to a list of temperatures
+temperatures = [temp[0] for temp in temperature_data] 
+
+# Plot the results as a histogram
+plt.figure(figsize=(10, 6))
+plt.hist(temperatures, bins=12, edgecolor= "gray", label='tobs')
+plt.xlabel('Temperature')
+plt.ylabel('Frequency') 
+plt.legend()
+plt.show()   
+
+![image](https://github.com/user-attachments/assets/154591f9-410c-4c6f-aed6-bc333339eae0)
+
+
+#Close Session 
+session.close()
 
     Query the previous 12 months of TOBS data for that station.
 
