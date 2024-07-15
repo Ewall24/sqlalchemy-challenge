@@ -124,9 +124,14 @@ temperature_data = session.query(measurement.tobs).filter(
 ).all()
 
 # Convert query results to a list of temperatures
-temperatures = [temp[0] for temp in temperature_data] 
+temperatures = [temp[0] for temp in temperature_data]  
+
+Query the previous 12 months of TOBS data for that station.
+
+    Plot the results as a histogram with bins=12, as the following image shows:<img width="478" alt="station-histogram" src="https://github.com/user-attachments/assets/2170bdb9-c71d-4e7a-89f0-cba1c8545a5f"> 
 
 # Plot the results as a histogram
+
 plt.figure(figsize=(10, 6))
 plt.hist(temperatures, bins=12, edgecolor= "gray", label='tobs')
 plt.xlabel('Temperature')
@@ -140,11 +145,8 @@ plt.show()
 #Close Session 
 session.close()
 
-    Query the previous 12 months of TOBS data for that station.
-
-    Plot the results as a histogram with bins=12, as the following image shows:<img width="478" alt="station-histogram" src="https://github.com/user-attachments/assets/2170bdb9-c71d-4e7a-89f0-cba1c8545a5f"> 
-
-    Close your session.
+    
+    
 
 #Part 2: Design Your Climate App 
 
