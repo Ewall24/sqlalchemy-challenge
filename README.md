@@ -152,30 +152,67 @@ session.close()
 
 Now that you’ve completed your initial analysis, you’ll design a Flask API based on the queries that you just developed. To do so, use Flask to create your routes as follows:
 
-    /
+    
 
-        Start at the homepage.
+        Start at the homepage. 
+        engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 
         List all the available routes. 
+@app.route("/") 
+def welcome(): 
+    return(
+        f"All Available Routes: <br/>"
+        f"/api/v1.0/precipitation<br/>"
+        f"/api/v1.0/stations<br/>" 
+        f"/api/v1.0/tobs<br/>" 
+        f"/api/v1.0/&lt;start&gt;<br/>"
+        f"/api/v1.0/&lt;start&gt;/&lt;end&gt;"
+    )
 
     
 
     /api/v1.0/precipitation
 
-        Convert the query results from your precipitation analysis (i.e. retrieve only the last 12 months of data) to a dictionary using date as the key and prcp as the value.
+        Convert the query results from your precipitation analysis (i.e. retrieve only the last 12 months of data) to a dictionary using date as the key and prcp as the value. 
+        @app.route("/api/v1.0/precipitation") 
+def precipitation(): 
+    session = Session(engine) 
+    one_year = dt.date(2017,8,23) - dt.timedelta(days=365)
+    scores = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= one_year).all()
+    session.close 
 
-        Return the JSON representation of your dictionary.
+    precipitation_dict ={date: prcp for date, prcp in scores } 
+
+    Return the JSON representation of your dictionary.
+   return jsonify(precipitation_dict)      
 
     /api/v1.0/stations
         Return a JSON list of stations from the dataset.
+        @app.route("/api/v1.0/stations") 
+def stations(): 
+           session =Session(engine) 
+           stations_data = session.query(Station.station).all() 
+           session.close()
 
-    /api/v1.0/tobs
+           stations_list =list(np.ravel(stations_data)) 
+           return jsonify(stations_list) 
+
+    /api/v1.0/tobs 
 
         Query the dates and temperature observations of the most-active station for the previous year of data.
-
+         @app.route("/api/v1.0/tobs") 
+def tobs():
+    session = Session(engine)
+    one_year = dt.date(2017, 8, 23) - dt.timedelta(days = 365)
+    temperature_data = session.query(Measurement.date, Measurement.tobs).filter(Measurement.station == 'USC00519281')\
+    .filter(Measurement.date >= one_year).all()
         Return a JSON list of temperature observations for the previous year.
-
-    /api/v1.0/<start> and /api/v1.0/<start>/<end>
+   observed_temps = list(np.ravel(temperature_data))
+    return jsonify(observed_temps) 
+   
+    
+    /api/v1.0/<start> and /api/v1.0/<start>/<end> 
+    
 
         Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range.
 
@@ -186,7 +223,23 @@ Now that you’ve completed your initial analysis, you’ll design a Flask API b
 
     Join the station and measurement tables for some of the queries.
 
-    Use the Flask jsonify function to convert your API data to a valid JSON response object.
+    Use the Flask jsonify function to convert your API data to a valid JSON response object. 
+
+    @app.route("/api/v1.0/<start>") 
+@app.route("/api/v1.0/<start>/<end>") 
+def temperature(start=None,end=None):
+    session = Session(engine)
+    result_temperatures = [func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
+    if not end:
+        results = session.query(*result_temperatures).filter(Measurement.date <= start).all() 
+        session.close
+       
+       
+        temps = list(np.ravel(results))
+        return jsonify(temps)
+if __name__ == '__main__':
+    app.run(debug=True) 
+
 
 
   
